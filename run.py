@@ -8,7 +8,8 @@ from os.path import join as path_join
 #import joblib
 import numpy as np
 #from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import SGDRegressor
+#from sklearn.linear_model import SGDRegressor
+from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error
 
 
@@ -53,7 +54,8 @@ print salaries.shape
                                    #oob_score=True,
                                    #min_samples_split=30,
                                    #random_state=3465343)
-classifier = SGDRegressor(random_state=3465343, verbose=0, n_iter=1000)
+#classifier = SGDRegressor(random_state=3465343, verbose=0, n_iter=50)
+classifier = LinearRegression()
 classifier.fit(features, salaries)
 predictions = classifier.predict(validation_features)
 #oob_predictions = classifier.oob_predictions_
@@ -61,4 +63,4 @@ print valid_salaries[1:10]
 print predictions[1:10]
 mae = mean_absolute_error(valid_salaries, predictions)
 print "MAE validation: ", mae
-save_model(classifier, "sgd_regressor_default_1000", mae)
+save_model(classifier, "linearRegression_default", mae)
