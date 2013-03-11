@@ -23,26 +23,6 @@ features = join_features("%strain_count_vector_matrix_max_f_100",
 validation_features = join_features("%svalid_count_vector_matrix_max_f_100",
         ["Title", "FullDescription", "LocationRaw", "LocationNormalized"],
         data_dir)
-#try:
-    #features = joblib.load(path_join(cache_dir, "train_features_join_100"))
-    #print "Loaded features"
-#except Exception as e:
-    #print e
-    #filename = "%strain_count_vector_matrix_max_f_100"
-    #extracted = []
-    #print("Extracting features and training model")
-    #for column_name in ["Title", "FullDescription", "LocationRaw", "LocationNormalized"]:
-        #print "Extracting: ", column_name
-        #fea = joblib.load(path_join(cache_dir, filename % column_name))
-        #if hasattr(fea, "toarray"):
-            #extracted.append(fea.toarray())
-        #else:
-            #extracted.append(fea)
-    #if len(extracted) > 1:
-        #features = np.concatenate(extracted, axis=1)
-    #else:
-        #features = extracted[0]
-    #joblib.dump(features, path_join(cache_dir, "train_features_join_100"))
 print "features", features.shape
 print "valid features", validation_features.shape
 salaries = np.array(list(read_column(paths["train_data_path"], "SalaryNormalized"))).astype(np.float64)
