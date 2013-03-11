@@ -6,6 +6,18 @@ import pandas as pd
 import pickle
 
 
+def read_column(filename, column_name):
+    """returns generator with values in column_name in filename"""
+    csv_file = csv.reader(open(filename, 'r'))
+    header = csv_file.next()
+    print header
+    if column_name not in header:
+        raise Exception("Column name is not in header!")
+    column_index = header.index(column_name)
+    for line in csv_file:
+        yield line[column_index]
+
+
 def get_paths(filename="Settings.json"):
     paths = json.loads(open(filename).read())
     data_path = os.path.expandvars(paths["data_path"])
