@@ -1,0 +1,8 @@
+{
+	"data_path": "/home/mabu/kaggle/job-salary-prediction",
+	"train_data_path": "data/processed/Train_train.csv",
+	"valid_data_path": "data/processed/Train_valid.csv",
+	"test_data_path": "data/processed/Train_test.csv",
+	"model_path": "models/random_forest_rev1.pickle",
+	"prediction_path": "submissions/random_forest_benchmark_rev1.csv"
+}
