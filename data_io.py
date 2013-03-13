@@ -6,6 +6,7 @@ import pickle
 from os.path import join as path_join
 import joblib
 import numpy as np
+from sklearn.preprocessing import LabelEncoder
 
 
 def read_column(filename, column_name):
@@ -59,9 +60,21 @@ data_dir = paths["data_path"]
 cache_dir = path_join(data_dir, "tmp")
 memory = joblib.Memory(cachedir=cache_dir)
 
+@memory.cache
+def label_encode_column_fit(column_name, file_id="train_data_path"):
+    le = LabelEncoder()
+    transformation = le.fit_transform(list(read_column(paths[file_id], column_name)))
+    #print "classes:", list(le.classes_)
+    return le, transformation
+
 
 @memory.cache
-def join_features(filename_pattern, column_names, data_dir):
+def label_encode_column_transform(le, column_name, file_id="valid_data_path"):
+    return le.transform(list(read_column(paths[file_id], column_name)))
+
+
+@memory.cache
+def join_features(filename_pattern, column_names, data_dir, additional_features=[]):
     #filename = "%strain_count_vector_matrix_max_f_100"
     cache_dir = path_join(data_dir, "tmp")
     extracted = []
@@ -73,6 +86,9 @@ def join_features(filename_pattern, column_names, data_dir):
             extracted.append(fea.toarray())
         else:
             extracted.append(fea)
+    #import ipdb; ipdb.set_trace()
+    additional_features = map(lambda x: np.reshape(np.array(x),(len(x),1)),additional_features)
+    extracted.extend(additional_features)
     if len(extracted) > 1:
         return np.concatenate(extracted, axis=1)
     else:

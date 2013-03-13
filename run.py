@@ -3,6 +3,8 @@ from data_io import (
     read_column,
     save_model,
     join_features,
+    label_encode_column_fit,
+    label_encode_column_transform
 )
 from os.path import join as path_join
 #import joblib
@@ -19,15 +21,27 @@ paths = get_paths("Settings.json")
 data_dir = paths["data_path"]
 cache_dir = path_join(data_dir, "tmp")
 
+le_category, category_train = label_encode_column_fit("Category")
+category_valid = label_encode_column_transform(le_category, "Category")
+
+le_contractTime, contractTime_train = label_encode_column_fit("ContractTime")
+contractTime_valid = label_encode_column_transform(le_contractTime, "ContractTime")
+
+le_contractType, contractType_train = label_encode_column_fit("ContractType")
+contractType_valid = label_encode_column_transform(le_contractType, "ContractType")
+
 
 features = join_features("%s_train_count_vector_matrix_max_f_200",
-        ["Title", "FullDescription", "LocationRaw"],
-        data_dir)
+                         ["Title", "FullDescription", "LocationRaw"],
+                         data_dir,
+                         [contractTime_train, contractType_train, category_train])
 validation_features = join_features("%s_valid_count_vector_matrix_max_f_200",
-        ["Title", "FullDescription", "LocationRaw"],
-        data_dir)
+                                    ["Title", "FullDescription", "LocationRaw"],
+                                    data_dir,
+                                    [contractTime_valid, contractType_valid, category_valid])
 print "features", features.shape
 print "valid features", validation_features.shape
+
 
 salaries = np.array(list(read_column(paths["train_data_path"], "SalaryNormalized"))).astype(np.float64)
 valid_salaries = np.array(list(read_column(paths["valid_data_path"], "SalaryNormalized"))).astype(np.float64)
@@ -40,7 +54,7 @@ print salaries.shape
                                    #random_state=3465343)
 for n_trees in range(10,11,10):
     print n_trees
-    name = "ExtraTree_min_samplesdef_%dtrees_200f_noNormLocation" % n_trees
+    name = "ExtraTree_min_samplesdef_%dtrees_200f_noNormLocation_categoryTimeType" % n_trees
     print name
     classifier = ExtraTreesRegressor(n_estimators=n_trees,
                                     verbose=2,
