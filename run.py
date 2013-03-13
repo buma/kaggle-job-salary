@@ -19,14 +19,16 @@ paths = get_paths("Settings.json")
 data_dir = paths["data_path"]
 cache_dir = path_join(data_dir, "tmp")
 
+
 features = join_features("%s_train_count_vector_matrix_max_f_200",
-        ["Title", "FullDescription", "LocationRaw", "LocationNormalized"],
+        ["Title", "FullDescription", "LocationNormalized"],
         data_dir)
 validation_features = join_features("%s_valid_count_vector_matrix_max_f_200",
-        ["Title", "FullDescription", "LocationRaw", "LocationNormalized"],
+        ["Title", "FullDescription", "LocationNormalized"],
         data_dir)
 print "features", features.shape
 print "valid features", validation_features.shape
+
 salaries = np.array(list(read_column(paths["train_data_path"], "SalaryNormalized"))).astype(np.float64)
 valid_salaries = np.array(list(read_column(paths["valid_data_path"], "SalaryNormalized"))).astype(np.float64)
 print salaries.shape
@@ -36,9 +38,9 @@ print salaries.shape
                                    #oob_score=True,
                                    #min_samples_split=30,
                                    #random_state=3465343)
-for n_trees in range(20,21,10):
+for n_trees in range(10,11,10):
     print n_trees
-    name = "ExtraTree_min_samplesdef_%dtrees_200f" % n_trees
+    name = "ExtraTree_min_samplesdef_%dtrees_200f_norawLocation" % n_trees
     print name
     classifier = ExtraTreesRegressor(n_estimators=n_trees,
                                     verbose=2,
