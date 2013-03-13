@@ -21,10 +21,10 @@ cache_dir = path_join(data_dir, "tmp")
 
 
 features = join_features("%s_train_count_vector_matrix_max_f_200",
-        ["Title", "FullDescription", "LocationNormalized"],
+        ["Title", "FullDescription", "LocationRaw"],
         data_dir)
 validation_features = join_features("%s_valid_count_vector_matrix_max_f_200",
-        ["Title", "FullDescription", "LocationNormalized"],
+        ["Title", "FullDescription", "LocationRaw"],
         data_dir)
 print "features", features.shape
 print "valid features", validation_features.shape
@@ -40,7 +40,7 @@ print salaries.shape
                                    #random_state=3465343)
 for n_trees in range(10,11,10):
     print n_trees
-    name = "ExtraTree_min_samplesdef_%dtrees_200f_norawLocation" % n_trees
+    name = "ExtraTree_min_samplesdef_%dtrees_200f_noNormLocation" % n_trees
     print name
     classifier = ExtraTreesRegressor(n_estimators=n_trees,
                                     verbose=2,
