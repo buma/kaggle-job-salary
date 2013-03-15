@@ -29,7 +29,7 @@ def get_paths(filename="Settings.json"):
     return paths
 
 
-def save_model(model, model_name=None, mae=None):
+def save_model(model, model_name=None, mae=None, mae_cv=None):
     """Saves model in model_name.pickle file
     also creates model_name.txt with model parameters and
     mae value on validation set if provided"""
@@ -43,6 +43,8 @@ def save_model(model, model_name=None, mae=None):
             infofile.write("\n")
             if mae is not None:
                 infofile.write("\nMAE validation: %f\n" % mae)
+            if mae_cv is not None:
+                infofile.write("\nMAE CV: %f\n" % mae_cv)
         out_path = filepath + ".pickle"
 
     pickle.dump(model, open(out_path, "w"))
