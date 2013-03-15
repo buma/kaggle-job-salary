@@ -32,11 +32,11 @@ le_contractType, contractType_train = label_encode_column_fit("ContractType")
 contractType_valid = label_encode_column_transform(le_contractType, "ContractType")
 
 
-features = join_features("%strain_count_vector_matrix_max_f_100",
+features = join_features("%s_train_tfidf_matrix_max_f_100", #train_count_vector_matrix_max_f_100",
                          ["Title", "FullDescription", "LocationRaw", "LocationNormalized"],
                          data_dir,
                          [contractTime_train, contractType_train, category_train])
-validation_features = join_features("%svalid_count_vector_matrix_max_f_100",
+validation_features = join_features("%s_valid_tfidf_matrix_max_f_100", #valid_count_vector_matrix_max_f_100",
                                     ["Title", "FullDescription", "LocationRaw", "LocationNormalized"],
                                     data_dir,
                                     [contractTime_valid, contractType_valid, category_valid])
@@ -53,29 +53,37 @@ print salaries.shape
                                    #oob_score=True,
                                    #min_samples_split=30,
                                    #random_state=3465343)
-for n_trees in range(10,11,10):
-    print n_trees
-    name = "ExtraTree_min_samplesdef_%dtrees_100f_categoryTimeType" % n_trees
-    print name
-    classifier = ExtraTreesRegressor(n_estimators=n_trees,
-                                    verbose=2,
-                                    n_jobs=1,
-                                    oob_score=False,
-                                    #min_samples_split=1,
-                                    random_state=3465343)
+for n_trees in range(10,21,10):
+    for min_samples_split in [2, 30]:
+        print n_trees
+        name = "ExtraTree_min_sample%d_%dtrees_100f_categoryTimeType_tfidf" % (min_samples_split, n_trees)
+        print name
+        classifier = ExtraTreesRegressor(n_estimators=n_trees,
+                                        verbose=2,
+                                        n_jobs=1,
+                                        oob_score=False,
+                                        min_samples_split=min_samples_split,
+                                        random_state=3465343)
 #classifier = SGDRegressor(random_state=3465343, verbose=0, n_iter=50)
 #classifier = LinearRegression()
-    scores = cross_val_score(classifier, features, salaries, cv=3, score_func=mean_absolute_error, verbose=1)
-    print "Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() / 2)
 
-    #classifier.fit(features, salaries)
-    #predictions = classifier.predict(validation_features)
-    #print valid_salaries[1:10]
-    #print predictions[1:10]
-    #mae = mean_absolute_error(valid_salaries, predictions)
-    #print "MAE validation: ", mae
-    #save_model(classifier, name, mae)
-    #oob_predictions = classifier.oob_prediction_
-    #mae_oob = mean_absolute_error(salaries, oob_predictions)
-    #print "MAE OOB: ", mae_oob
-    break
+        classifier.fit(features, salaries)
+        predictions = classifier.predict(validation_features)
+        print valid_salaries[1:10]
+        print predictions[1:10]
+        mae = mean_absolute_error(valid_salaries, predictions)
+        print "MAE validation: ", mae
+        save_model(classifier, name, mae)
+        #oob_predictions = classifier.oob_prediction_
+        #mae_oob = mean_absolute_error(salaries, oob_predictions)
+        #print "MAE OOB: ", mae_oob
+        classifier = ExtraTreesRegressor(n_estimators=n_trees,
+                                        verbose=2,
+                                        n_jobs=1,
+                                        oob_score=False,
+                                        min_samples_split=min_samples_split,
+                                        random_state=3465343)
+        scores = cross_val_score(classifier, features, salaries, cv=3, score_func=mean_absolute_error, verbose=1)
+        print "Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() / 2)
+        mae_cv = "%0.2f (+/- %0.2f)" % (scores.mean(), scores.std() / 2)
+        save_model(classifier, name, mae, mae_cv)
