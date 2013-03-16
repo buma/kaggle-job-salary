@@ -36,12 +36,12 @@ le_contractType, contractType_train = label_encode_column_fit("ContractType")
 contractType_valid = label_encode_column_transform(le_contractType, "ContractType")
 
 
-features = join_features("%s_train_tfidf_matrix_max_f_100", #train_count_vector_matrix_max_f_100",
-                         ["Title", "FullDescription", "LocationRaw", "LocationNormalized"],
+features = join_features("%s_train_count_vector_matrix_max_f_200", #train_tfidf_matrix_max_f_200
+                         ["Title", "FullDescription", "LocationRaw"],
                          data_dir,
                          [contractTime_train, contractType_train, category_train])
-validation_features = join_features("%s_valid_tfidf_matrix_max_f_100", #valid_count_vector_matrix_max_f_100",
-                                    ["Title", "FullDescription", "LocationRaw", "LocationNormalized"],
+validation_features = join_features("%s_valid_count_vector_matrix_max_f_200",#valid_tfidf_matrix_max_f_200
+                                    ["Title", "FullDescription", "LocationRaw"],
                                     data_dir,
                                     [contractTime_valid, contractType_valid, category_valid])
 print "features", features.shape
@@ -61,11 +61,11 @@ print salaries.shape
 for n_trees in range(10,21,10):
     for min_samples_split in [2, 30]:
         print n_trees
-        name = "ExtraTree_min_sample%d_%dtrees_100f_categoryTimeType_tfidf_log" % (min_samples_split, n_trees)
+        name = "ExtraTree_min_sample%d_%dtrees_200f_noNorm_categoryTimeType_log" % (min_samples_split, n_trees)
         print name
         classifier = ExtraTreesRegressor(n_estimators=n_trees,
                                         verbose=2,
-                                        n_jobs=1,
+                                        n_jobs=-1,
                                         oob_score=False,
                                         min_samples_split=min_samples_split,
                                         random_state=3465343)
@@ -84,7 +84,7 @@ for n_trees in range(10,21,10):
         #print "MAE OOB: ", mae_oob
         classifier = ExtraTreesRegressor(n_estimators=n_trees,
                                         verbose=2,
-                                        n_jobs=1,
+                                        n_jobs=-1,
                                         oob_score=False,
                                         min_samples_split=min_samples_split,
                                         random_state=3465343)
@@ -92,3 +92,4 @@ for n_trees in range(10,21,10):
         print "Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() / 2)
         mae_cv = "%0.2f (+/- %0.2f)" % (scores.mean(), scores.std() / 2)
         save_model(classifier, name, mae, mae_cv)
+    #break
