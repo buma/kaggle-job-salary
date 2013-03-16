@@ -60,6 +60,7 @@ def load_model(model_name=None):
 paths = get_paths("Settings.json")
 data_dir = paths["data_path"]
 cache_dir = path_join(data_dir, "tmp")
+prediction_dir = path_join(data_dir, "predictions")
 memory = joblib.Memory(cachedir=cache_dir)
 
 @memory.cache
@@ -96,6 +97,18 @@ def join_features(filename_pattern, column_names, data_dir, additional_features=
     else:
         return extracted[0]
 
+def fit_predict(model_name):
+    if model_name == "vowpall":
+        predictions = np.loadtxt(path_join(data_dir, "code", "from_fastml", "optional", "predictions_split.txt"))
+    else:
+        model = load_model(model_name)
+        print model
+        model.fit(features, salaries)
+        predictions = model.predict(validation_features)
+    joblib.dump(predictions, path_join(prediction_dir, model_name + "_prediction_valid"))
+
+def load_predictions(model_name):
+    return joblib.load(path_join(prediction_dir, model_name + "_prediction_valid"))
 
 #FIXME: fix function
 def write_submission(predictions):
