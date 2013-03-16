@@ -16,7 +16,7 @@ import numpy as np
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.ensemble import GradientBoostingRegressor
 #from sklearn.linear_model import SGDRegressor
-#from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error
 from sklearn.cross_validation import cross_val_score
 from itertools import combinations, chain
@@ -92,6 +92,10 @@ for average_index in chain(combinations([0,1,2],2), combinations([0,1,2],3)):
     mean_pred = my_prediction.mean(axis=1)
     mae = mean_absolute_error(mean_pred, valid_salaries)
     print "MAE:", mae
+    classifier = LinearRegression()
+    scores = cross_val_score(classifier, my_prediction, valid_salaries, cv=5, score_func=mean_absolute_error, verbose=1, n_jobs=-1)
+    print "Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() / 2)
+
 #(0, 1)
 #ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_log vowpall
 #MAE: 5925.75752661
@@ -105,3 +109,5 @@ for average_index in chain(combinations([0,1,2],2), combinations([0,1,2],3)):
 #ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_log vowpall
 #MAE: 5889.15272898
 
+#Linear regression (0,1,2):
+#Accuracy: 5834.14 (+/- 29.86)
