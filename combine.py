@@ -80,24 +80,37 @@ predictions = np.vstack(all_model_predictions).T
 predictions = np.exp(predictions)
 #predictions = np.random.randint(0,5, size=(10,3))
 print predictions.shape
-print predictions[1:10,:]
-indexes = range(0,len(model_names))
-for num in range(2,len(model_names) + 1):
-    for average_index in combinations(indexes,num):
+print predictions[1:10, :]
+indexes = range(0, len(model_names))
+
+
+def print_index(index):
+    names = map(lambda x: model_names[x], index)
+    return ", ".join(names)
+best_average = (10000,(0))
+best_classifier = best_average
+for num in range(2, len(model_names) + 1):
+    for average_index in combinations(indexes, num):
         print average_index
-        print model_names[average_index[0]], model_names[average_index[1]]
-        my_prediction = predictions[:,average_index]
+        print print_index(average_index)
+        my_prediction = predictions[:, average_index]
         #print my_prediction[1:10,:]
         mean_pred = my_prediction.mean(axis=1)
         mae = mean_absolute_error(mean_pred, valid_salaries)
         print "MAE:", mae
-        #classifier = LinearRegression()
-        classifier = RidgeCV(loss_func=mean_absolute_error)
-        classifier.fit(my_prediction, valid_salaries)
-        alpha = classifier.alpha_
-        classifier = Ridge(alpha=alpha)
+        if best_average[0] > mae:
+            best_average = (mae, average_index)
+        classifier = LinearRegression()
+        #classifier = RidgeCV(loss_func=mean_absolute_error)
+        #classifier.fit(my_prediction, valid_salaries)
+        #alpha = classifier.alpha_
+        #classifier = Ridge(alpha=alpha)
         scores = cross_val_score(classifier, my_prediction, valid_salaries, cv=5, score_func=mean_absolute_error, verbose=0, n_jobs=-1)
         print "Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() / 2)
+        if best_classifier[0] > scores.mean():
+            best_classifier = (scores.mean(), average_index)
+print "best average:", best_average[0], print_index(best_average[1])
+print "best classifier:", best_classifier[0], print_index(best_classifier[1])
 #
 #(0, 1)
 #ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_log vowpall
@@ -114,3 +127,7 @@ for num in range(2,len(model_names) + 1):
 
 #Linear regression (0,1,2):
 #Accuracy: 5834.14 (+/- 29.86)
+
+#Ridge Linear je isto
+#best average: 5766.06198285 ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_log, vowpall, ExtraTree_min_sample2_40trees_200f_noNorm_categoryTimeType_log
+#best classifier: 5778.35931012 vowpall, ExtraTree_min_sample2_40trees_200f_noNorm_categoryTimeType_log
