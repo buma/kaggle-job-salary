@@ -7,13 +7,13 @@ from data_io import (
     label_encode_column_transform,
     load_predictions,
     fit_predict,
+    write_submission
 )
 from os.path import join as path_join
 #import joblib
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error
-from sklearn.cross_validation import cross_val_score
 from sklearn.feature_extraction.text import CountVectorizer
 import joblib
 
@@ -60,11 +60,11 @@ salaries = np.array(list(read_column(paths["train_data_path"], "SalaryNormalized
 #valid_salaries = np.array(list(read_column(paths["valid_data_path"], "SalaryNormalized"))).astype(np.float64)
 salaries = np.log(salaries)
 print salaries.shape
-#valid_salaries = np.log(valid_salaries)
-#print valid_salaries.shape
+valid_salaries = np.log(valid_salaries)
+print valid_salaries.shape
 
 #model1 = "ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_log"
-model2 = "vowpall"
+model2 = "vowpall_submission"
 #model3 = "Random_forest_min_sample2_20trees_200f_noNorm_categoryTimeType_log"
 model4 = "ExtraTree_min_sample2_40trees_200f_noNorm_categoryTimeType_log"
 #model5 = "Random_forest_min_sample2_40trees_200f_noNorm_categoryTimeType_log"
@@ -75,24 +75,28 @@ model_names = [model2, model4]
 #fit_predict(model1)
 #fit_predict(model3)
 
-fit_predict(model4, features, salaries, validation_features, type_n="test_subm")
+#fit_predict(model4, features, salaries, validation_features, type_n="test_subm")
 
-a=5/0
 
 all_model_predictions = []
 for model_name in model_names:
     #fit_predict(model_name, features, salaries, validation_features, type_n="test")
-    model_predictions = load_predictions(model_name, type_n="test")
+    model_predictions = load_predictions(model_name, type_n="test_subm")
     print "modelp", model_predictions.shape
-    print "%s\nMAE: %f\n" % (model_name, log_mean_absolute_error(np.log(valid_salaries), model_predictions))
+    #print "%s\nMAE: %f\n" % (model_name, log_mean_absolute_error(np.log(valid_salaries), model_predictions))
     all_model_predictions.append(model_predictions)
 predictions = np.vstack(all_model_predictions).T
 predictions = np.exp(predictions)
 #predictions = np.random.randint(0,5, size=(10,3))
 print predictions.shape
-print predictions[1:10, :], valid_salaries[1:10]
+print predictions[1:10, :]
 
 
-classifier = LinearRegression()
-scores = cross_val_score(classifier, predictions, valid_salaries, cv=5, score_func=mean_absolute_error, verbose=0, n_jobs=-1)
-print "Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() / 2)
+#classifier = LinearRegression()
+#classifier.fit(predictions, salaries)
+#result = classifier.predict(validation_features)
+result = predictions.mean(axis=1)
+model_name = "-".join(model_names)
+joblib.dump(result, path_join(prediction_dir, model_name + "_prediction"))
+
+write_submission("vowpal-extra-mean.csv", path_join(prediction_dir, model_name + "_prediction"), unlog=False)
