@@ -1,7 +1,6 @@
 from data_io import (
     get_paths,
     read_column,
-    save_model,
     load_model,
     join_features,
     label_encode_column_fit,
@@ -16,7 +15,7 @@ import numpy as np
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.ensemble import GradientBoostingRegressor
 #from sklearn.linear_model import SGDRegressor
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, RidgeCV, Ridge
 from sklearn.metrics import mean_absolute_error
 from sklearn.cross_validation import cross_val_score
 from itertools import combinations, chain
@@ -64,38 +63,42 @@ print valid_salaries.shape
 model1 = "ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_log"
 model2 = "vowpall"
 model3 = "Random_forest_min_sample2_20trees_200f_noNorm_categoryTimeType_log"
-model_names = [model1, model2, model3]
+model4 = "ExtraTree_min_sample2_40trees_200f_noNorm_categoryTimeType_log"
+model_names = [model1, model2, model3, model4]
 
 
 #fit_predict(model2)
 #fit_predict(model1)
 #fit_predict(model3)
 
-
-
-model1_predictions = load_predictions(model1)
-print mean_absolute_error(valid_salaries, model1_predictions)
-model2_predictions = load_predictions(model2)
-print mean_absolute_error(valid_salaries, model2_predictions)
-model3_predictions = load_predictions(model3)
-print mean_absolute_error(valid_salaries, model3_predictions)
-predictions = np.vstack([model1_predictions, model2_predictions, model3_predictions, np.log(valid_salaries)]).T
+all_model_predictions = []
+for model_name in model_names:
+    model_predictions = load_predictions(model_name)
+    print "%s\nMAE: %f\n" % (model_name, mean_absolute_error(valid_salaries, model_predictions))
+    all_model_predictions.append(model_predictions)
+predictions = np.vstack(all_model_predictions).T
 predictions = np.exp(predictions)
 #predictions = np.random.randint(0,5, size=(10,3))
 print predictions.shape
 print predictions[1:10,:]
-for average_index in chain(combinations([0,1,2],2), combinations([0,1,2],3)):
-    print average_index
-    print model_names[average_index[0]], model_names[average_index[1]]
-    my_prediction = predictions[:,average_index]
-    #print my_prediction[1:10,:]
-    mean_pred = my_prediction.mean(axis=1)
-    mae = mean_absolute_error(mean_pred, valid_salaries)
-    print "MAE:", mae
-    classifier = LinearRegression()
-    scores = cross_val_score(classifier, my_prediction, valid_salaries, cv=5, score_func=mean_absolute_error, verbose=1, n_jobs=-1)
-    print "Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() / 2)
-
+indexes = range(0,len(model_names))
+for num in range(2,len(model_names) + 1):
+    for average_index in combinations(indexes,num):
+        print average_index
+        print model_names[average_index[0]], model_names[average_index[1]]
+        my_prediction = predictions[:,average_index]
+        #print my_prediction[1:10,:]
+        mean_pred = my_prediction.mean(axis=1)
+        mae = mean_absolute_error(mean_pred, valid_salaries)
+        print "MAE:", mae
+        #classifier = LinearRegression()
+        classifier = RidgeCV(loss_func=mean_absolute_error)
+        classifier.fit(my_prediction, valid_salaries)
+        alpha = classifier.alpha_
+        classifier = Ridge(alpha=alpha)
+        scores = cross_val_score(classifier, my_prediction, valid_salaries, cv=5, score_func=mean_absolute_error, verbose=0, n_jobs=-1)
+        print "Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() / 2)
+#
 #(0, 1)
 #ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_log vowpall
 #MAE: 5925.75752661
