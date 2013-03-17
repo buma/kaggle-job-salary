@@ -97,24 +97,34 @@ def join_features(filename_pattern, column_names, data_dir, additional_features=
     else:
         return extracted[0]
 
-def fit_predict(model_name):
+
+def fit_predict(model_name, features, salaries, validation_features, type_n="valid"):
     if model_name == "vowpall":
-        predictions = np.loadtxt(path_join(data_dir, "code", "from_fastml", "optional", "predictions_split.txt"))
+        print "Naredi vowpall"
+        predictions = np.loadtxt(path_join(data_dir, "code", "from_fastml", "optional", "predictions_split_" + type_n + ".txt"))
     else:
         model = load_model(model_name)
         print model
         model.fit(features, salaries)
         predictions = model.predict(validation_features)
-    joblib.dump(predictions, path_join(prediction_dir, model_name + "_prediction_valid"))
+    joblib.dump(predictions, path_join(prediction_dir, model_name + "_prediction_" + type_n))
 
-def load_predictions(model_name):
-    return joblib.load(path_join(prediction_dir, model_name + "_prediction_valid"))
 
-#FIXME: fix function
-def write_submission(predictions):
-    prediction_path = get_paths()["prediction_path"]
-    writer = csv.writer(open(prediction_path, "w"), lineterminator="\n")
-    valid = get_valid_df()
-    rows = [x for x in zip(valid["Id"], predictions.flatten())]
+def load_predictions(model_name, type_n="valid"):
+    return joblib.load(path_join(prediction_dir, model_name + "_prediction_" + type_n))
+
+
+def write_submission(submission_name, prediction_name, unlog=False):
+    paths = get_paths("Settings_submission.json")
+    data_dir = paths["data_path"]
+    prediction_path = path_join(data_dir, "predictions", prediction_name)
+    submission_path = path_join(paths["submission_path"], submission_name)
+    writer = csv.writer(open(submission_path, "w"), lineterminator="\n")
+    valid_name = paths["valid_data_path"]
+    valid = read_column(valid_name, "Id")
+    predictions = joblib.load(prediction_path)
+    if unlog:
+        predictions = np.exp(predictions)
+    rows = [x for x in zip(valid, predictions.flatten())]
     writer.writerow(("Id", "SalaryNormalized"))
     writer.writerows(rows)
