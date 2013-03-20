@@ -13,7 +13,7 @@ import numpy as np
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.ensemble import GradientBoostingRegressor
 #from sklearn.linear_model import SGDRegressor
-#from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error
 from sklearn.cross_validation import cross_val_score
 from sklearn.ensemble import AdaBoostRegressor
@@ -59,15 +59,23 @@ print salaries.shape
                                    #verbose=2,
                                    #n_jobs=1,
                                    #oob_score=True,
-                                   #min_samples_split=30,
+                                  #min_samples_split=30,
                                    #random_state=3465343)
-for n_trees in range(30,51,10):
+for n_trees in range(10,11,10):
     for min_samples_split in [2, 30]:
         print n_trees
         #name = "ExtraTree_min_sample%d_%dtrees_200f_noNorm_categoryTimeType_log" % (min_samples_split, n_trees)
-        name = "adaBoost_decision_%dtrees_100f_noNorm_categoryTimeType_log" % (n_trees)
+        name = "adaBoost_ExtraTree-2-10tr_%dtrees_100f_noNorm_categoryTimeType_log" % (n_trees)
         print name
-        classifier = AdaBoostRegressor(n_estimators=n_trees, random_state=3465343)
+        base_clf = ExtraTreesRegressor(n_estimators=10,
+                                        verbose=2,
+                                        n_jobs=1,
+                                        oob_score=False,
+                                        min_samples_split=2,
+                                        random_state=3465343)
+        classifier = AdaBoostRegressor(base_estimator=base_clf,
+                                       n_estimators=n_trees,
+                                       random_state=3465343)
 
         classifier.fit(features, salaries)
         predictions = classifier.predict(validation_features)
@@ -80,7 +88,15 @@ for n_trees in range(30,51,10):
         #oob_predictions = classifier.oob_prediction_
         #mae_oob = mean_absolute_error(salaries, oob_predictions)
         #print "MAE OOB: ", mae_oob
-        classifier = AdaBoostRegressor(n_estimators=n_trees, random_state=3465343)
+        base_clf = ExtraTreesRegressor(n_estimators=10,
+                                        verbose=2,
+                                        n_jobs=1,
+                                        oob_score=False,
+                                        min_samples_split=2,
+                                        random_state=3465343)
+        classifier = AdaBoostRegressor(base_estimator=base_clf,
+                                       n_estimators=n_trees,
+                                       random_state=3465343)
         scores = cross_val_score(classifier, features, salaries, cv=3, score_func=log_mean_absolute_error, verbose=1)
         print "Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() / 2)
         mae_cv = "%0.2f (+/- %0.2f)" % (scores.mean(), scores.std() / 2)
