@@ -60,27 +60,29 @@ salaries = np.array(list(read_column(paths["train_data_path"], "SalaryNormalized
 #valid_salaries = np.array(list(read_column(paths["valid_data_path"], "SalaryNormalized"))).astype(np.float64)
 salaries = np.log(salaries)
 print salaries.shape
-valid_salaries = np.log(valid_salaries)
-print valid_salaries.shape
+#valid_salaries = np.log(valid_salaries)
+#print valid_salaries.shape
 
-#model1 = "ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_log"
+model1 = "ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_log"
 model2 = "vowpall_submission"
-#model3 = "Random_forest_min_sample2_20trees_200f_noNorm_categoryTimeType_log"
+model3 = "Random_forest_min_sample2_20trees_200f_noNorm_categoryTimeType_log"
 model4 = "ExtraTree_min_sample2_40trees_200f_noNorm_categoryTimeType_log"
-#model5 = "Random_forest_min_sample2_40trees_200f_noNorm_categoryTimeType_log"
-model_names = [model2, model4]
+model5 = "Random_forest_min_sample2_40trees_200f_noNorm_categoryTimeType_log"
+#model_names = [model2, model4]
+model_names = [model1, model2, model4]
 
 
 #fit_predict(model2)
 #fit_predict(model1)
 #fit_predict(model3)
+#fit_predict(model5)
 
 #fit_predict(model4, features, salaries, validation_features, type_n="test_subm")
 
 
 all_model_predictions = []
 for model_name in model_names:
-    #fit_predict(model_name, features, salaries, validation_features, type_n="test")
+    fit_predict(model_name, features, salaries, validation_features, type_n="test_subm")
     model_predictions = load_predictions(model_name, type_n="test_subm")
     print "modelp", model_predictions.shape
     #print "%s\nMAE: %f\n" % (model_name, log_mean_absolute_error(np.log(valid_salaries), model_predictions))
@@ -97,6 +99,7 @@ print predictions[1:10, :]
 #result = classifier.predict(validation_features)
 result = predictions.mean(axis=1)
 model_name = "-".join(model_names)
+model_name = "vowpal-extra20_40-mean"
 joblib.dump(result, path_join(prediction_dir, model_name + "_prediction"))
 
-write_submission("vowpal-extra-mean.csv", path_join(prediction_dir, model_name + "_prediction"), unlog=False)
+write_submission("vowpal-extra20_40-mean.csv", path_join(prediction_dir, model_name + "_prediction"), unlog=False)
