@@ -69,7 +69,7 @@ model3 = "Random_forest_min_sample2_20trees_200f_noNorm_categoryTimeType_log"
 model4 = "ExtraTree_min_sample2_40trees_200f_noNorm_categoryTimeType_log"
 model5 = "Random_forest_min_sample2_40trees_200f_noNorm_categoryTimeType_log"
 #model_names = [model2, model4]
-model_names = [model1, model2, model4]
+model_names = [model1, model2, model4, model5]
 
 
 #fit_predict(model2)
@@ -99,7 +99,7 @@ print predictions[1:10, :]
 #result = classifier.predict(validation_features)
 result = predictions.mean(axis=1)
 model_name = "-".join(model_names)
-model_name = "vowpal-extra20_40-mean"
+model_name = "vowpal-extra20_40-random40-mean"
 joblib.dump(result, path_join(prediction_dir, model_name + "_prediction"))
 
-write_submission("vowpal-extra20_40-mean.csv", path_join(prediction_dir, model_name + "_prediction"), unlog=False)
+write_submission("vowpal-extra20_40-random40-mean.csv", path_join(prediction_dir, model_name + "_prediction"), unlog=False)
