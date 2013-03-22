@@ -44,7 +44,9 @@ def save_model(model, model_name=None, mae=None, mae_cv=None):
             if mae is not None:
                 infofile.write("\nMAE validation: %f\n" % mae)
             if mae_cv is not None:
-                infofile.write("\nMAE CV: %f\n" % mae_cv)
+                infofile.write("\nMAE CV: %s\n" % mae_cv)
+            if parameters is not None:
+                infofile.write("\nParameters: %s\n" % parameters)
         out_path = filepath + ".pickle"
 
     pickle.dump(model, open(out_path, "w"))
