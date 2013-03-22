@@ -30,7 +30,7 @@ def get_paths(filename="Settings.json"):
     return paths
 
 
-def save_model(model, model_name=None, mae=None, mae_cv=None):
+def save_model(model, model_name=None, mae=None, mae_cv=None, parameters=None):
     """Saves model in model_name.pickle file
     also creates model_name.txt with model parameters and
     mae value on validation set if provided"""
@@ -67,7 +67,7 @@ prediction_dir = path_join(data_dir, "predictions")
 memory = joblib.Memory(cachedir=cache_dir)
 
 @memory.cache
-def label_encode_column_fit(column_name, file_id="train_data_path"):
+def label_encode_column_fit(column_name, file_id="train_data_path", type_n="train"):
     le = LabelEncoder()
     transformation = le.fit_transform(list(read_column(paths[file_id], column_name)))
     #print "classes:", list(le.classes_)
@@ -82,7 +82,7 @@ def label_encode_column_fit_only(column_name, file_id="train_data_path", type_n=
 
 
 @memory.cache
-def label_encode_column_transform(le, column_name, file_id="valid_data_path"):
+def label_encode_column_transform(le, column_name, file_id="valid_data_path", type_n="valid"):
     return le.transform(list(read_column(paths[file_id], column_name)))
 
 
@@ -116,7 +116,7 @@ def fit_predict(model_name, features, salaries, validation_features, type_n="val
         return
     else:
         print model_name, "doing fit_predict"
-    if model_name == "vowpall":
+    if model_name.startswith("vowpall"):
         print "Naredi vowpall"
         predictions = np.loadtxt(path_join(data_dir, "code", "from_fastml", "optional", "predictions_split_" + type_n + ".txt"))
     else:
@@ -126,7 +126,7 @@ def fit_predict(model_name, features, salaries, validation_features, type_n="val
         predictions = model.predict(features)
         joblib.dump(predictions, path_join(prediction_dir, model_name + "_train_prediction_" + type_n))
         predictions = model.predict(validation_features)
-    joblib.dump(predictions, path_join(prediction_dir, model_name + "_prediction_" + type_n))
+    joblib.dump(predictions, filepath)
 
 
 def load_predictions(model_name, type_n="valid"):
