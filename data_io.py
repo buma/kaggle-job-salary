@@ -4,6 +4,7 @@ import json
 import os
 import pickle
 from os.path import join as path_join
+from os.path import isfile
 import joblib
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
@@ -101,6 +102,13 @@ def join_features(filename_pattern, column_names, data_dir, additional_features=
 
 
 def fit_predict(model_name, features, salaries, validation_features, type_n="valid"):
+    filepath = path_join(prediction_dir, model_name + "_prediction_" + type_n)
+    #print "path:", filepath
+    if isfile(filepath):
+        print model_name + "_prediction_" + type_n + " already exists"
+        return
+    else:
+        print model_name, "doing fit_predict"
     if model_name == "vowpall":
         print "Naredi vowpall"
         predictions = np.loadtxt(path_join(data_dir, "code", "from_fastml", "optional", "predictions_split_" + type_n + ".txt"))
@@ -108,6 +116,8 @@ def fit_predict(model_name, features, salaries, validation_features, type_n="val
         model = load_model(model_name)
         print model
         model.fit(features, salaries)
+        predictions = model.predict(features)
+        joblib.dump(predictions, path_join(prediction_dir, model_name + "_train_prediction_" + type_n))
         predictions = model.predict(validation_features)
     joblib.dump(predictions, path_join(prediction_dir, model_name + "_prediction_" + type_n))
 
