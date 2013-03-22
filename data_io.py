@@ -73,6 +73,13 @@ def label_encode_column_fit(column_name, file_id="train_data_path"):
     #print "classes:", list(le.classes_)
     return le, transformation
 
+@memory.cache
+def label_encode_column_fit_only(column_name, file_id="train_data_path", type_n="train"):
+    le = LabelEncoder()
+    le.fit(list(read_column(paths[file_id], column_name)))
+    #print "classes:", list(le.classes_)
+    return le
+
 
 @memory.cache
 def label_encode_column_transform(le, column_name, file_id="valid_data_path"):
