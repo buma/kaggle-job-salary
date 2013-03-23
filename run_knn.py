@@ -15,6 +15,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor, export_graphviz
 from sklearn.ensemble import ExtraTreesRegressor
+from sklearn.linear_model import SGDRegressor
+from sklearn.preprocessing import StandardScaler
 import joblib
 
 
@@ -37,8 +39,8 @@ features = map(lambda (le, name): label_encode_column_transform(le, name, file_i
 description_length = map(len, read_column(paths["train_data_path"], "FullDescription"))
 title_length = map(len, read_column(paths["train_data_path"], "Title"))
 
-#features.append(description_length)
-#features.append(title_length)
+features.append(description_length)
+features.append(title_length)
 
 
 #le_features, features = zip(*features_les)
@@ -48,10 +50,10 @@ validation_features = map(lambda (le, name): label_encode_column_transform(le, n
 description_length = map(len, read_column(paths["valid_data_path"], "FullDescription"))
 title_length = map(len, read_column(paths["valid_data_path"], "Title"))
 
-#validation_features.append(description_length)
-#validation_features.append(title_length)
+validation_features.append(description_length)
+validation_features.append(title_length)
 
-#names.extend(["Description_length", "Title_Length"])
+names.extend(["Description_length", "Title_Length"])
 
 features = np.vstack(features).T
 validation_features = np.vstack(validation_features).T
@@ -70,10 +72,11 @@ valid_salaries = np.log(valid_salaries)
 print salaries.shape
 #for n_clusters in [8, 10, 15, 20, 25, 30]:
 #for n_clusters in range(50, 201, 25):
-for n_trees in range(10,31,5):
+for n_trees in range(100,151,25):
     for min_samples_split in [2, 10, 15, 20, 25, 30]:
-        name = "Dectree_depth-3_AllLocations_log" # % (n_clusters)
-        name = "ExtraTreesRegressor_%dtrees_split%d_notex_log" % (n_trees, min_samples_split)
+        #name = "Dectree_depth-3_AllLocations_log" # % (n_clusters)
+        #name = "ExtraTreesRegressor_%dtrees_split%d_notex_log" % (n_trees, min_samples_split)
+        name = "sgd_regressor_default_%d_notext_log" % (n_trees,)
         print name
         #kmeans = KMeans(
             #random_state=3465343,
@@ -82,13 +85,15 @@ for n_trees in range(10,31,5):
             #verbose=0)
         #classifier = Pipeline(steps=[('knn', kmeans), ('tree', DecisionTreeRegressor())])
         #classifier = DecisionTreeRegressor(max_depth=3, random_state=3465343)
-        classifier = ExtraTreesRegressor(n_estimators=n_trees,
-                                        verbose=2,
-                                        n_jobs=-1,
-                                        oob_score=False,
-                                        min_samples_split=min_samples_split,
-                                        random_state=3465343)
+        #classifier = ExtraTreesRegressor(n_estimators=n_trees,
+                                        #verbose=2,
+                                        #n_jobs=-1,
+                                        #oob_score=False,
+                                        #min_samples_split=min_samples_split,
+                                        #random_state=3465343)
 
+        clf = SGDRegressor(random_state=3465343, verbose=1, n_iter=n_trees)
+        classifier = Pipeline(steps=[('scale', StandardScaler()), ('sgd', clf)])
         classifier.fit(features, salaries)
         #import StringIO
         #with open("iris.dot", 'w') as f:
@@ -127,15 +132,17 @@ for n_trees in range(10,31,5):
             #verbose=0)
         #classifier = Pipeline(steps=[('knn', kmeans), ('tree', DecisionTreeRegressor())])
         #classifier = DecisionTreeRegressor(max_depth=3, random_state=3465343)
-        classifier = ExtraTreesRegressor(n_estimators=n_trees,
-                                        verbose=1,
-                                        n_jobs=-1,
-                                        oob_score=False,
-                                        min_samples_split=min_samples_split,
-                                        random_state=3465343)
+        #classifier = ExtraTreesRegressor(n_estimators=n_trees,
+                                        #verbose=1,
+                                        #n_jobs=-1,
+                                        #oob_score=False,
+                                        #min_samples_split=min_samples_split,
+                                        #random_state=3465343)
+        clf = SGDRegressor(random_state=3465343, verbose=0, n_iter=n_trees)
+        classifier = Pipeline(steps=[('scale', StandardScaler()), ('sgd', clf)])
         scores = cross_val_score(classifier, features, salaries, cv=5, score_func=log_mean_absolute_error, verbose=1)
         print "Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() / 2)
         mae_cv = "%0.2f (+/- %0.2f)" % (scores.mean(), scores.std() / 2)
         save_model(classifier, name, mae, mae_cv, parameters=",".join(names))
-        #break
+        break
     ##break
