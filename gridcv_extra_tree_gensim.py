@@ -17,10 +17,12 @@ logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=lo
 salaries = dio.get_salaries("train", log=True)
 
 #title_corpus_csc = dio.read_gensim_corpus("train_title_nltk_filtered.corpus.mtx")
-desc_corpus_csc = dio.read_gensim_corpus("train_desc_nltk_filtered.corpus.mtx")
+#desc_corpus_csc = dio.read_gensim_corpus("train_desc_nltk_filtered.corpus.mtx")
+locraw_corpus_csc = dio.read_gensim_corpus("train_locraw_nltk_filtered.corpus.mtx")
 
 #print title_corpus_csc.shape
-print desc_corpus_csc.shape
+print locraw_corpus_csc.shape
+
 
 pipeline = Pipeline([
     ('pca', RandomizedPCA(random_state=3465343)),
@@ -34,7 +36,7 @@ parameters = {
 
 metric = dio.error_metric
 if __name__ == "__main__":
-    grid_search = GridSearchCV(pipeline, parameters, n_jobs=1, verbose=2,
+    grid_search = GridSearchCV(pipeline, parameters, n_jobs=1, verbose=3,
                                loss_func=metric,
                                iid=False,
                                refit=False)
@@ -45,7 +47,7 @@ if __name__ == "__main__":
     print("parameters:")
     pprint(parameters)
     t0 = time()
-    grid_search.fit(desc_corpus_csc, salaries)
+    grid_search.fit(locraw_corpus_csc, salaries)
     print("done in %0.3fs" % (time() - t0))
     print()
 
@@ -69,3 +71,9 @@ if __name__ == "__main__":
 #Best parameters set:
         #pca__n_components: 200
 #[CVScoreTuple(parameters={'pca__n_components': 100}, mean_validation_score=9030.5959214303093, cv_validation_scores=array([ 8729.14388367,  9085.7485522 ,  9276.89532842])), CVScoreTuple(parameters={'pca__n_components': 200}, mean_validation_score=9004.7195356220382, cv_validation_scores=array([ 8712.73164292,  9081.87764045,  9219.54932349])), CVScoreTuple(parameters={'pca__n_components': 300}, mean_validation_score=9064.9514615674289, cv_validation_scores=array([ 8783.89079244,  9134.31360085,  9276.64999141])), CVScoreTuple(parameters={'pca__n_components': 400}, mean_validation_score=9076.2734308900635, cv_validation_scores=array([ 8776.89542476,  9160.65547469,  9291.26939321])), CVScoreTuple(parameters={'pca__n_components': 500}, mean_validation_score=9135.1105593660341, cv_validation_scores=array([ 8850.89803432,  9207.27553593,  9347.15810784])), CVScoreTuple(parameters={'pca__n_components': 600}, mean_validation_score=9124.6361021371431, cv_validation_scores=array([ 8837.96896581,  9150.07743191,  9385.8619087 ]))]
+
+#locraw
+#Best score: 11682.736
+#Best parameters set:
+        #pca__n_components: 500
+#[CVScoreTuple(parameters={'pca__n_components': 100}, mean_validation_score=11700.085554554107, cv_validation_scores=array([ 11406.18685298,  11712.73823257,  11981.33157811])), CVScoreTuple(parameters={'pca__n_components': 200}, mean_validation_score=11695.141211538628, cv_validation_scores=array([ 11397.00982221,  11709.27085742,  11979.14295498])), CVScoreTuple(parameters={'pca__n_components': 300}, mean_validation_score=11690.498230833402, cv_validation_scores=array([ 11396.93686941,  11711.90773147,  11962.65009162])), CVScoreTuple(parameters={'pca__n_components': 400}, mean_validation_score=11685.953107602816, cv_validation_scores=array([ 11393.0004248 ,  11698.86060978,  11965.99828823])), CVScoreTuple(parameters={'pca__n_components': 500}, mean_validation_score=11682.735588651414, cv_validation_scores=array([ 11393.70158166,  11697.70161791,  11956.80356639])), CVScoreTuple(parameters={'pca__n_components': 600}, mean_validation_score=11683.095522332193, cv_validation_scores=array([ 11387.12135864,  11698.48642768,  11963.67878067]))]
