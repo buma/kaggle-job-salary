@@ -18,7 +18,7 @@ def read_column(filename, column_name):
     header = csv_file.next()
     #print header
     if column_name not in header:
-        raise Exception("Column name is not in header!")
+        raise Exception("Column '%s' is not in header! Header: %s" % (column_name, ",".join(header)))
     column_index = header.index(column_name)
     for line in csv_file:
         yield line[column_index]
@@ -170,6 +170,7 @@ class DataIO(object):
         self.cache_dir = path_join(data_dir, "tmp")
         self.prediction_dir = path_join(data_dir, "predictions")
         self.models_dir = path_join(data_dir, "models")
+        self.submission_path = paths["submission_path"]
         return paths
 
     def _check_type_n(self, type_n):
@@ -199,7 +200,7 @@ class DataIO(object):
         """returns generator with values in column_name in filename"""
         if filename_or_path in self.paths:
             filename = self.paths[filename_or_path]
-        elif os.isfile(filename_or_path):
+        elif isfile(filename_or_path):
             filename = filename_or_path
         else:
             raise Exception("filename_or_path: '%s' not found" % filename_or_path)
@@ -207,7 +208,7 @@ class DataIO(object):
         header = csv_file.next()
         #print header
         if column_name not in header:
-            raise Exception("Column name is not in header!")
+            raise Exception("Column '%s' is not in header! Header: %s" % (column_name, ",".join(header)))
         column_index = header.index(column_name)
         for line in csv_file:
             yield line[column_index]
@@ -305,4 +306,24 @@ class DataIO(object):
                     infofile.write("\nParameters: %s\n" % parameters)
             out_path = filepath + ".pickle"
 
-        pickle.dump(model, open(out_path, "w"))
+            pickle.dump(model, open(out_path, "w"))
+
+    def get_prediction(self, prediction_name=None, model_name=None, type_n=None):
+        if prediction_name is not None:
+            filename = prediction_name
+        elif model_name is not None and type_n is not None:
+            filename = model_name + "_prediction_" + type_n
+        return joblib.load(path_join(self.prediction_path, filename))
+
+    def write_submission(self, submission_name, prediction_name=None, model_name=None, type_n=None, unlog=False):
+        submission_file_path = path_join(self.submission_path, submission_name)
+        writer = csv.writer(open(submission_file_path, "w"), lineterminator="\n")
+        valid = read_column("valid_data_path", "Id")
+        predictions = self.get_prediction(prediction_name=prediction_name,
+                                          model_name=model_name,
+                                          type_n=type_n)
+        if unlog:
+            predictions = np.exp(predictions)
+        rows = [x for x in zip(valid, predictions.flatten())]
+        writer.writerow(("Id", "SalaryNormalized"))
+        writer.writerows(rows)
