@@ -8,6 +8,8 @@ from os.path import isfile
 import joblib
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
+from scipy.io import mmread
+from sklearn.metrics import mean_absolute_error
 
 
 def read_column(filename, column_name):
@@ -147,3 +149,160 @@ def write_submission(submission_name, prediction_name, unlog=False):
     rows = [x for x in zip(valid, predictions.flatten())]
     writer.writerow(("Id", "SalaryNormalized"))
     writer.writerows(rows)
+
+
+class DataIO(object):
+
+    def __init__(self, paths_name):
+        self.paths_name = paths_name
+        self.paths = self._get_paths()
+        memory = joblib.Memory(cachedir=self.cache_dir)
+        self.get_le_features = memory.cache(self.get_le_features)
+        self.get_features = memory.cache(self.get_features)
+        self.is_log = False
+
+    def _get_paths(self):
+        paths = json.loads(open(self.paths_name).read())
+        data_path = os.path.expandvars(paths["data_path"])
+        for key in paths:
+            paths[key] = os.path.join(data_path, os.path.expandvars(paths[key]))
+        self.data_dir = paths["data_path"]
+        self.cache_dir = path_join(data_dir, "tmp")
+        self.prediction_dir = path_join(data_dir, "predictions")
+        self.models_dir = path_join(data_dir, "models")
+        return paths
+
+    def _check_type_n(self, type_n):
+        if type_n == "train":
+            file_id = "train_data_path"
+        elif type_n == "train_full":
+            file_id = "train_full_data_path"
+        elif type_n == "valid":
+            file_id = "valid_data_path"
+        else:
+            raise ValueError("Unknown type_n: %s" % type_n)
+        return file_id
+
+    def get_le_features(self, columns, type_n):
+        file_id = self._check_type_n(type_n)
+
+        le_features = map(lambda x: self.label_encode_column_fit(
+            x, file_id=file_id, type_n=type_n), columns)
+        return le_features
+
+    def get_features(self, columns, type_n, le_features):
+        file_id = self._check_type_n(type_n)
+        extra_features = map(lambda (le, name): self.label_encode_column_transform(le, name, file_id=file_id, type_n=type_n), zip(le_features, columns))
+        return extra_features
+
+    def read_column(self, filename_or_path, column_name):
+        """returns generator with values in column_name in filename"""
+        if filename_or_path in self.paths:
+            filename = self.paths[filename_or_path]
+        elif os.isfile(filename_or_path):
+            filename = filename_or_path
+        else:
+            raise Exception("filename_or_path: '%s' not found" % filename_or_path)
+        csv_file = csv.reader(open(filename, 'r'))
+        header = csv_file.next()
+        #print header
+        if column_name not in header:
+            raise Exception("Column name is not in header!")
+        column_index = header.index(column_name)
+        for line in csv_file:
+            yield line[column_index]
+
+    def label_encode_column_fit_transform(self, column_name, file_id="train_data_path", type_n="train"):
+        """Returns LabelEncoder and transformation for column
+
+        Parameters
+        ----------
+        column_name: string
+            Which column
+        file_id: string
+            Id of file in paths. Gets filepath
+        type_n: string
+            train, test, valid. Same file id gets different files in different types. For caching
+        """
+        le = LabelEncoder()
+        transformation = le.fit_transform(list(self.read_column(file_id, column_name)))
+        #print "classes:", list(le.classes_)
+        return le, transformation
+
+    def label_encode_column_fit(self, column_name, file_id="train_data_path", type_n="train"):
+        le = LabelEncoder()
+        le.fit(list(self.read_column(file_id, column_name)))
+        #print "classes:", list(le.classes_)
+        return le
+
+    def label_encode_column_transform(self, le, column_name, file_id="valid_data_path", type_n="valid"):
+        return le.transform(list(self.read_column(file_id, column_name)))
+
+    def read_gensim_corpus(self, filename):
+        """Reads corpus in MMX format and returns Sparse scipy matrix
+
+        It assumes the corpus is in cache directory"""
+        corpus_csc = mmread(open(path_join(self.cache_dir, filename), "r"))
+        return corpus_csc
+
+    def get_salaries(self, type_n, log=False):
+        file_id = self._check_type_n(type_n)
+        salaries = np.array(list(self.read_column(file_id, "SalaryNormalized"))).astype(np.float64)
+        if log:
+            self.is_log = True
+            salaries = np.log(salaries)
+        return salaries
+
+    def compare_valid_pred(self, valid, pred):
+        if self.is_log:
+            mexp = np.exp
+        else:
+            mexp = lambda x: x
+        print mexp(valid[1:10])
+        print mexp(pred[1:10])
+
+    def error_metric(self, y_true, y_pred):
+        if self.is_log:
+            mexp = np.exp
+        else:
+            mexp = lambda x: x
+        return mean_absolute_error(mexp(y_true), mexp(y_pred))
+    #TODO: Why this doesn't work?
+        #if self.is_log:
+            #def log_mean_absolute_error(y_true, y_pred):
+                #return mean_absolute_error(np.exp(y_true), np.exp(y_pred))
+            #return log_mean_absolute_error
+        #else:
+            #def local_mean_absolute_error(y_true, y_pred):
+                #return mean_absolute_error(y_true, y_pred)
+            #return local_mean_absolute_error
+
+    def save_prediction(self, model_name, predictions, type_n):
+        self._check_type_n(type_n)
+        joblib.dump(predictions, path_join(self.prediction_dir, model_name + "_prediction_" + type_n))
+
+    def save_model(self, model, model_name, mae=None, mae_cv=None, parameters=None):
+        """Saves model in model_name.pickle file
+        also creates model_name.txt with model parameters and
+        mae value on validation set if provided
+
+        :param mae MAE validation float
+        :param mae_cv MAE CV string
+        :param parameters model parameters string"""
+        if model_name is None:
+            out_path = get_paths()["model_path"]
+        else:
+            filepath = path_join(self.models_dir, model_name)
+# Saves model parameters
+            with open(filepath + '.txt', 'wb') as infofile:
+                infofile.write(str(model))
+                infofile.write("\n")
+                if mae is not None:
+                    infofile.write("\nMAE validation: %f\n" % mae)
+                if mae_cv is not None:
+                    infofile.write("\nMAE CV: %s\n" % mae_cv)
+                if parameters is not None:
+                    infofile.write("\nParameters: %s\n" % parameters)
+            out_path = filepath + ".pickle"
+
+        pickle.dump(model, open(out_path, "w"))
