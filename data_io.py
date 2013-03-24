@@ -153,12 +153,13 @@ def write_submission(submission_name, prediction_name, unlog=False):
 
 class DataIO(object):
 
-    def __init__(self, paths_name):
+    def __init__(self, paths_name, cache=True):
         self.paths_name = paths_name
         self.paths = self._get_paths()
-        memory = joblib.Memory(cachedir=self.cache_dir)
-        self.get_le_features = memory.cache(self.get_le_features)
-        self.get_features = memory.cache(self.get_features)
+        if cache:
+            memory = joblib.Memory(cachedir=self.cache_dir)
+            self.get_le_features = memory.cache(self.get_le_features)
+            self.get_features = memory.cache(self.get_features)
         self.is_log = False
 
     def _get_paths(self):
@@ -177,8 +178,11 @@ class DataIO(object):
         if type_n == "train":
             file_id = "train_data_path"
         elif type_n == "train_full":
-            file_id = "train_full_data_path"
-        elif type_n == "valid":
+            if "train_full_data_path" in self.paths:
+                file_id = "train_full_data_path"
+            else:
+                file_id = "train_data_path"
+        elif type_n == "valid" or type_n == "valid_full":
             file_id = "valid_data_path"
         else:
             raise ValueError("Unknown type_n: %s" % type_n)
@@ -190,6 +194,28 @@ class DataIO(object):
         le_features = map(lambda x: self.label_encode_column_fit(
             x, file_id=file_id, type_n=type_n), columns)
         return le_features
+
+    def join_features(self, filename_pattern, column_names, additional_features=[]):
+        #filename = "%strain_count_vector_matrix_max_f_100"
+        extracted = []
+        print("Extracting features and training model")
+        for column_name in column_names:  # ["Title", "FullDescription", "LocationRaw", "LocationNormalized"]:
+            print "Extracting: ", column_name
+            fea = joblib.load(path_join(self.cache_dir, filename_pattern % column_name))
+            #print fea.shape
+            if hasattr(fea, "toarray"):
+                extracted.append(fea.toarray())
+            else:
+                extracted.append(fea)
+        #import ipdb; ipdb.set_trace()
+        #print map(len, additional_features)
+        # changes arrays in additional features to numpy arrays with shape(len(x), 1)
+        additional_features = map(lambda x: np.reshape(np.array(x), (len(x), 1)), additional_features)
+        extracted.extend(additional_features)
+        if len(extracted) > 1:
+            return np.concatenate(extracted, axis=1)
+        else:
+            return extracted[0]
 
     def get_features(self, columns, type_n, le_features):
         file_id = self._check_type_n(type_n)
@@ -294,7 +320,6 @@ class DataIO(object):
             out_path = get_paths()["model_path"]
         else:
             filepath = path_join(self.models_dir, model_name)
-# Saves model parameters
             with open(filepath + '.txt', 'wb') as infofile:
                 infofile.write(str(model))
                 infofile.write("\n")
@@ -313,17 +338,21 @@ class DataIO(object):
             filename = prediction_name
         elif model_name is not None and type_n is not None:
             filename = model_name + "_prediction_" + type_n
-        return joblib.load(path_join(self.prediction_path, filename))
+        return joblib.load(path_join(self.prediction_dir, filename))
 
-    def write_submission(self, submission_name, prediction_name=None, model_name=None, type_n=None, unlog=False):
+    def write_submission(self, submission_name, predictions=None, prediction_name=None, model_name=None, type_n=None, unlog=False):
         submission_file_path = path_join(self.submission_path, submission_name)
         writer = csv.writer(open(submission_file_path, "w"), lineterminator="\n")
-        valid = read_column("valid_data_path", "Id")
-        predictions = self.get_prediction(prediction_name=prediction_name,
-                                          model_name=model_name,
-                                          type_n=type_n)
-        if unlog:
-            predictions = np.exp(predictions)
+        valid = self.read_column("valid_data_path", "Id")
+        if predictions is None:
+            predictions = self.get_prediction(prediction_name=prediction_name,
+                                                model_name=model_name,
+                                                type_n=type_n)
+            if unlog:
+                predictions = np.exp(predictions)
+        else:
+            if self.is_log:
+                predictions = np.exp(predictions)
         rows = [x for x in zip(valid, predictions.flatten())]
         writer.writerow(("Id", "SalaryNormalized"))
         writer.writerows(rows)
