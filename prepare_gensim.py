@@ -19,7 +19,7 @@ import operator
 from gensim.corpora.textcorpus import TextCorpus
 #from gensim.corpora.dictionary import Dictionary
 from gensim.corpora.mmcorpus import MmCorpus
-paths = get_paths("Settings_loc5.json")
+paths = get_paths("Settings.json")
 data_dir = paths["data_path"]
 cache_dir = path_join(data_dir, "tmp")
 prediction_dir = path_join(data_dir, "predictions")
@@ -91,7 +91,11 @@ fname = paths["train_data_path"]
 def create_corpus(column, shortname, type_n):
     my_corpus = Corpus_Column(fname, column)
     dicti = my_corpus.dictionary
-    dicti.filter_extremes()
+#shortname1 has only freq < 5 removed others have filter_extremes
+    once_ids = [tokenid for tokenid, docfreq in dicti.dfs.iteritems() if docfreq < 5]
+    dicti.filter_tokens(bad_ids=once_ids)
+    #dicti.filter_extremes()
+    dicti.compactify()
     dicti.save(path_join(cache_dir, "%s_%s_nltk_filtered_dic.pickle" % (type_n, shortname)))
     MmCorpus.serialize(path_join(cache_dir, "%s_%s_nltk_filtered.corpus.mtx" % (type_n, shortname)), my_corpus, id2word=dicti)
     print my_corpus.dictionary
@@ -102,32 +106,6 @@ def create_corpus(column, shortname, type_n):
             print dicti[k], v
             i = i + 1
 
-#create_corpus("LocationRaw", "locraw", "train")
-create_corpus("FullDescription", "desc", "train")
-create_corpus("Title", "title", "train")
-
-#description_corpus = Corpus_Column(fname, "FullDescription")
-#dicti = description_corpus.dictionary
-#dicti.filter_extremes()
-#dicti.save(path_join(cache_dir, "train_desc_nltk_filtered_dic.pickle"))
-#MmCorpus.serialize(path_join(cache_dir, "train_desc_nltk_filtered.corpus.mtx"), description_corpus, id2word=dicti)
-#print description_corpus.dictionary
-#print "50 most used"
-#i = 0
-#for k, v in sorted(dicti.dfs.items(), key=operator.itemgetter(1), reverse=True):
-    #if i < 50:
-        #print dicti[k], v
-        #i = i + 1
-
-#title_corpus = Corpus_Column(fname, "Title")
-#dicti = title_corpus.dictionary
-#dicti.filter_extremes()
-#dicti.save(path_join(cache_dir, "train_title_nltk_filtered_dic.pickle"))
-#MmCorpus.serialize(path_join(cache_dir, "train_title_nltk_filtered.corpus.mtx"), title_corpus, id2word=dicti)
-#print title_corpus.dictionary
-#print "50 most used"
-#i = 0
-#for k, v in sorted(dicti.dfs.items(), key=operator.itemgetter(1), reverse=True):
-    #if i < 50:
-        #print dicti[k], v
-        #i = i + 1
+#create_corpus("LocationRaw", "locraw1", "train")
+#create_corpus("FullDescription", "desc1", "train")
+#create_corpus("Title", "title1", "train")
