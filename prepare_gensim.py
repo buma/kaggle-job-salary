@@ -91,7 +91,7 @@ description_corpus = Corpus_Column(fname, "FullDescription")
 dicti = description_corpus.dictionary
 dicti.filter_extremes()
 dicti.save(path_join(cache_dir, "train_desc_nltk_filtered_dic.pickle"))
-MmCorpus.serialize(path_join(cache_dir, "train_desc_nltk_filtered.corpus.pickle"), description_corpus, id2word=dicti)
+MmCorpus.serialize(path_join(cache_dir, "train_desc_nltk_filtered.corpus.mtx"), description_corpus, id2word=dicti)
 print description_corpus.dictionary
 print "50 most used"
 i = 0
@@ -104,7 +104,7 @@ title_corpus = Corpus_Column(fname, "Title")
 dicti = title_corpus.dictionary
 dicti.filter_extremes()
 dicti.save(path_join(cache_dir, "train_title_nltk_filtered_dic.pickle"))
-MmCorpus.serialize(path_join(cache_dir, "train_title_nltk_filtered.corpus.pickle"), title_corpus, id2word=dicti)
+MmCorpus.serialize(path_join(cache_dir, "train_title_nltk_filtered.corpus.mtx"), title_corpus, id2word=dicti)
 print title_corpus.dictionary
 print "50 most used"
 i = 0
