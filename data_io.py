@@ -202,6 +202,25 @@ class DataIO(object):
             x, file_id=file_id, type_n=type_n), columns)
         return le_features
 
+    def make_counts(self, preprocessor, short_id, column_names, type_n, type_v):
+        #count_vector_titles = CountVectorizer(
+            #read_column(train_filename, column_name),
+            #max_features=200)
+        file_id = self._check_type_n(type_n)
+        valid_file_id = self._check_type_n(type_v)
+        name = "%s_%s_%s_%s"
+        for column_name in column_names:
+            titles = preprocessor.fit_transform(
+                self.read_column(file_id, column_name))
+            joblib.dump(preprocessor.vocabulary_, path_join(
+                self.cache_dir, name % (column_name, type_n, short_id, "vocabulary")))
+            joblib.dump(preprocessor.stop_words_, path_join(
+                self.cache_dir, name % (column_name, type_n, short_id, "stop_words")))
+            print joblib.dump(titles, path_join(self.cache_dir, name % (column_name, type_n, short_id, "matrix")))
+            titles_valid = preprocessor.transform(
+                self.read_column(valid_file_id, column_name))
+            print joblib.dump(titles_valid, path_join(self.cache_dir, name % (column_name, type_v, short_id, "matrix")))
+
     def join_features(self, filename_pattern, column_names, additional_features=[]):
         #filename = "%strain_count_vector_matrix_max_f_100"
         extracted = []
