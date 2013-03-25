@@ -10,6 +10,11 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from scipy.io import mmread
 from sklearn.metrics import mean_absolute_error
+try:
+    import cloud
+    on_cloud = cloud.running_on_cloud()
+except Exception as e:
+    on_cloud = False
 
 
 def read_column(filename, column_name):
@@ -306,7 +311,13 @@ class DataIO(object):
 
     def save_prediction(self, model_name, predictions, type_n):
         self._check_type_n(type_n)
-        joblib.dump(predictions, path_join(self.prediction_dir, model_name + "_prediction_" + type_n))
+        if on_cloud:
+            joblib.dump(predictions, model_name + "_prediction_" + type_n, compress=5)
+            cloud.bucket.put(model_name + "_prediction_" + type_n, prefix="prediction")
+        else:
+            joblib.dump(predictions, path_join(self.prediction_dir, model_name + "_prediction_" + type_n), compress=5)
+
+
 
     def save_model(self, model, model_name, mae=None, mae_cv=None, parameters=None):
         """Saves model in model_name.pickle file
@@ -329,9 +340,13 @@ class DataIO(object):
                     infofile.write("\nMAE CV: %s\n" % mae_cv)
                 if parameters is not None:
                     infofile.write("\nParameters: %s\n" % parameters)
+            if on_cloud:
+                cloud.bucket.put(filepath + '.txt', prefix="models")
             out_path = filepath + ".pickle"
 
             pickle.dump(model, open(out_path, "w"))
+            if on_cloud:
+                cloud.bucket.put(out_path, prefix="models")
 
     def get_prediction(self, prediction_name=None, model_name=None, type_n=None):
         if prediction_name is not None:
