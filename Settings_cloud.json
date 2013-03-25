@@ -1,14 +1,13 @@
 {
-	"data_path": "/home/mabu/kaggle/job-salary-prediction",
-	"_data_path": "/home/mabu/kaggle/job-salary-prediction",
+	"data_path": "/data",
 	"train_data_path": "data/processed/Train_train.csv",
 	"train_full_data_path": "data/raw/Train_rev1.csv",
 	"valid_data_path": "data/processed/Train_valid.csv",
 	"test_data_path": "data/processed/Train_test.csv",
 	"model_path": "models/random_forest_train.pickle",
 	"prediction_path": "submissions/random_forest_benchmark_rev1.csv",
-	"submission_path": "submissions",
-	"prediction_dir" : "predictions",
-	"models_dir" : "models",
-	"cache_dir" : "tmp"
+	"submission_path": "",
+	"prediction_dir" : "",
+	"models_dir" : "",
+	"cache_dir" : ""
 }

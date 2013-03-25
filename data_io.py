@@ -161,7 +161,7 @@ class DataIO(object):
     def __init__(self, paths_name, cache=True):
         self.paths_name = paths_name
         self.paths = self._get_paths()
-        if cache:
+        if not on_cloud and cache:
             memory = joblib.Memory(cachedir=self.cache_dir)
             self.get_le_features = memory.cache(self.get_le_features)
             self.get_features = memory.cache(self.get_features)
@@ -173,9 +173,9 @@ class DataIO(object):
         for key in paths:
             paths[key] = os.path.join(data_path, os.path.expandvars(paths[key]))
         self.data_dir = paths["data_path"]
-        self.cache_dir = path_join(data_dir, "tmp")
-        self.prediction_dir = path_join(data_dir, "predictions")
-        self.models_dir = path_join(data_dir, "models")
+        self.cache_dir = paths["cache_dir"]
+        self.prediction_dir = paths["prediction_dir"]
+        self.models_dir = paths["models_dir"]
         self.submission_path = paths["submission_path"]
         return paths
 
@@ -189,6 +189,8 @@ class DataIO(object):
                 file_id = "train_data_path"
         elif type_n == "valid" or type_n == "valid_full":
             file_id = "valid_data_path"
+        elif type_n == "testno":
+            file_id = "uknown"
         else:
             raise ValueError("Unknown type_n: %s" % type_n)
         return file_id
