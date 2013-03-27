@@ -17,9 +17,6 @@ xlim = (-50000, 50000)
 grid = True
 
 
-
-
-
 def my_plot(plot_smt, filename=None, ylim=None, xlim=None, grid=False, xlabel='Difference between salary and prediction', ylabel='Number of diferences'):
     fig = plt.figure()
     num_models = len(model_names)
@@ -70,10 +67,27 @@ def plot_hist2d1(axis, diff, abs_diff, cur_pred):
 def plot(axis, diff, abs_diff, cur_pred):
     axis.plot(diff)
 
+
+def plot_sorted(axis, diff, abs_diff, cur_pred):
+    sort_indices = np.argsort(valid_salaries)
+    axis.plot(diff[sort_indices], color='b')
+    axis.hold(True)
+    axis.plot(valid_salaries[sort_indices], color='g')
+
+
+def plot_valid_pred_sorted(axis, diff, abs_diff, cur_pred):
+    sort_indices = np.argsort(valid_salaries)
+    axis.plot(cur_pred[sort_indices], color='r')
+    axis.hold(True)
+    axis.plot(valid_salaries[sort_indices], color='g')
+
+
 #my_plot(plot_hist, ylim=ylim, xlim=xlim, grid=True)
 #my_plot(plot_hist2d)
 #my_plot(plot_hist2d1, xlabel="salarie", ylabel="predicted salarie")
-my_plot(plot, xlabel="salarie", ylabel="predicted salarie")
+#my_plot(plot, xlabel="salarie", ylabel="predicted salarie")
+#my_plot(plot_sorted, xlabel="Ad", ylabel="diff from valid salarie")
+my_plot(plot_valid_pred_sorted, xlabel="Ad", ylabel="valid salarie predicted salarie")
 
 #sorted_diff_indices = np.argsort(diff)
 #print diff[sorted_diff_indices[500]]
