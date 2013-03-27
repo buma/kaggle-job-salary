@@ -10,6 +10,8 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from scipy.io import mmread
 from sklearn.metrics import mean_absolute_error
+from sklearn.base import clone
+from scipy.sparse import coo_matrix, hstack, vstack
 try:
     import cloud
     on_cloud = cloud.running_on_cloud()
@@ -182,6 +184,8 @@ class DataIO(object):
     def _check_type_n(self, type_n):
         if type_n == "train":
             file_id = "train_data_path"
+        elif type_n == "train_and_valid":
+            file_id = "train_and_valid"
         elif type_n == "train_full":
             if "train_full_data_path" in self.paths:
                 file_id = "train_full_data_path"
@@ -189,7 +193,7 @@ class DataIO(object):
                 file_id = "train_data_path"
         elif type_n == "valid" or type_n == "valid_full":
             file_id = "valid_data_path"
-        elif type_n == "testno":
+        elif type_n == "testno" or type_n == "valid_classes" or type_n == "train_classes":
             file_id = "uknown"
         else:
             raise ValueError("Unknown type_n: %s" % type_n)
@@ -210,26 +214,39 @@ class DataIO(object):
         valid_file_id = self._check_type_n(type_v)
         name = "%s_%s_%s_%s"
         for column_name in column_names:
-            titles = preprocessor.fit_transform(
-                self.read_column(file_id, column_name))
-            joblib.dump(preprocessor.vocabulary_, path_join(
-                self.cache_dir, name % (column_name, type_n, short_id, "vocabulary")))
-            joblib.dump(preprocessor.stop_words_, path_join(
-                self.cache_dir, name % (column_name, type_n, short_id, "stop_words")))
-            print joblib.dump(titles, path_join(self.cache_dir, name % (column_name, type_n, short_id, "matrix")))
-            titles_valid = preprocessor.transform(
-                self.read_column(valid_file_id, column_name))
-            print joblib.dump(titles_valid, path_join(self.cache_dir, name % (column_name, type_v, short_id, "matrix")))
+            vocabulary_path = path_join(self.cache_dir, name % (column_name, type_n, short_id, "vocabulary"))
+            stop_words_path = path_join(self.cache_dir, name % (column_name, type_n, short_id, "stop_words"))
+            valid_path = path_join(self.cache_dir, name % (column_name, type_v, short_id, "matrix"))
+            cur_preprocessor = clone(preprocessor)
+            print "Working on %s" % column_name
+            if isfile(vocabulary_path) and isfile(stop_words_path):
+                print "vocabulary exists"
+                vocabulary = joblib.load(vocabulary_path)
+                stop_words = joblib.load(stop_words_path)
+                cur_preprocessor.set_params(vocabulary=vocabulary)
+                cur_preprocessor.set_params(stop_words=stop_words)
+            else:
+                print "Fitting train"
+                cur_preprocessor.set_params(input=self.read_column(file_id, column_name))
+                titles = cur_preprocessor.fit_transform(self.read_column(file_id, column_name))
+                joblib.dump(cur_preprocessor.vocabulary_, vocabulary_path)
+                joblib.dump(cur_preprocessor.stop_words_, stop_words_path)
+                print joblib.dump(titles, path_join(self.cache_dir, name % (column_name, type_n, short_id, "matrix")))
+            if not isfile(valid_path):
+                print "Fitting valid"
+                titles_valid = cur_preprocessor.transform(
+                    self.read_column(valid_file_id, column_name))
+                print joblib.dump(titles_valid, valid_path)
 
-    def join_features(self, filename_pattern, column_names, additional_features=[]):
+    def join_features(self, filename_pattern, column_names, additional_features=[], sparse=False):
         #filename = "%strain_count_vector_matrix_max_f_100"
         extracted = []
         print("Extracting features and training model")
         for column_name in column_names:  # ["Title", "FullDescription", "LocationRaw", "LocationNormalized"]:
             print "Extracting: ", column_name
             fea = joblib.load(path_join(self.cache_dir, filename_pattern % column_name))
-            #print fea.shape
-            if hasattr(fea, "toarray"):
+            print fea.shape
+            if not sparse and hasattr(fea, "toarray"):
                 extracted.append(fea.toarray())
             else:
                 extracted.append(fea)
@@ -237,9 +254,14 @@ class DataIO(object):
         #print map(len, additional_features)
         # changes arrays in additional features to numpy arrays with shape(len(x), 1)
         additional_features = map(lambda x: np.reshape(np.array(x), (len(x), 1)), additional_features)
+        if sparse:
+            additional_features = map(coo_matrix, additional_features)
         extracted.extend(additional_features)
         if len(extracted) > 1:
-            return np.concatenate(extracted, axis=1)
+            if sparse:
+                return hstack(extracted)
+            else:
+                return np.concatenate(extracted, axis=1)
         else:
             return extracted[0]
 
@@ -338,7 +360,9 @@ class DataIO(object):
         else:
             joblib.dump(predictions, path_join(self.prediction_dir, model_name + "_prediction_" + type_n), compress=5)
 
-
+    def load_model(self, model_name):
+        in_path = path_join(self.models_dir, model_name + ".pickle")
+        return pickle.load(open(in_path))
 
     def save_model(self, model, model_name, mae=None, mae_cv=None, parameters=None):
         """Saves model in model_name.pickle file
@@ -349,7 +373,7 @@ class DataIO(object):
         :param mae_cv MAE CV string
         :param parameters model parameters string"""
         if model_name is None:
-            out_path = get_paths()["model_path"]
+            raise ValueError("Model name is empty!")
         else:
             filepath = path_join(self.models_dir, model_name)
             with open(filepath + '.txt', 'wb') as infofile:
@@ -360,7 +384,7 @@ class DataIO(object):
                 if mae_cv is not None:
                     infofile.write("\nMAE CV: %s\n" % mae_cv)
                 if parameters is not None:
-                    infofile.write("\nParameters: %s\n" % parameters)
+                    infofile.write("\nParameters: %s\n" % (parameters, ))
             if on_cloud:
                 cloud.bucket.put(filepath + '.txt', prefix="models")
             out_path = filepath + ".pickle"
