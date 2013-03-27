@@ -17,12 +17,12 @@ xlim = (-50000, 50000)
 grid = True
 
 
-def my_plot(plot_smt, filename=None, ylim=None, xlim=None, grid=False, xlabel='Difference between salary and prediction', ylabel='Number of diferences'):
+def my_plot(plot_smt, filename=None, transform_prediction=np.exp, type_n="valid", ylim=None, xlim=None, grid=False, xlabel='Difference between salary and prediction', ylabel='Number of diferences'):
     fig = plt.figure()
     num_models = len(model_names)
     for idx, model_name in enumerate(model_names):
         prediction_salaries = dio.get_prediction(model_name=model_name, type_n="valid")
-        prediction_salaries = np.exp(prediction_salaries)
+        prediction_salaries = transform_prediction(prediction_salaries)
         diff = prediction_salaries - valid_salaries
         abs_diff = np.abs(diff)
         print model_name
@@ -87,7 +87,24 @@ def plot_valid_pred_sorted(axis, diff, abs_diff, cur_pred):
 #my_plot(plot_hist2d1, xlabel="salarie", ylabel="predicted salarie")
 #my_plot(plot, xlabel="salarie", ylabel="predicted salarie")
 #my_plot(plot_sorted, xlabel="Ad", ylabel="diff from valid salarie")
-my_plot(plot_valid_pred_sorted, xlabel="Ad", ylabel="valid salarie predicted salarie")
+#my_plot(plot_valid_pred_sorted, xlabel="Ad", ylabel="valid salarie predicted salarie")
+
+def encode_salaries(salaries, bins):
+    bin_edges = np.linspace(11500.0, 100000, bins + 1, endpoint=True)
+    #hist, bin_edges = np.histogram(salaries, bins)
+    print np.diff(bin_edges)
+    idxs = np.searchsorted(bin_edges, salaries, side="right")
+    return idxs, bin_edges
+
+valid_salaries, bin_edges = encode_salaries(valid_salaries, 4)
+model_names = [
+    "sgd_class_tfidf_titleFullLoc_bin4",
+    "multinomialnb_tfidf_titleFullLoc_bin4",
+    "randomForest_tfidf_titleFullLoc_bin4",
+    "extraTree_tfidf_titleFullLoc_f1_bin4",
+]
+my_plot(plot_valid_pred_sorted, transform_prediction=lambda x: x, xlabel="Ad", ylabel="salarie class", type_n="valid_classes")
+my_plot(plot_hist, transform_prediction=lambda x: x, xlabel="Ad", ylabel="salarie class", type_n="valid_classes")
 
 #sorted_diff_indices = np.argsort(diff)
 #print diff[sorted_diff_indices[500]]
