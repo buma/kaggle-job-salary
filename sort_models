@@ -1,2 +1,2 @@
 #!/bin/sh
-grep MAE ../../models/*.txt | sort -k 3 -t : -n
+grep MAE ../../models/*.txt | grep -v Curr | sort -k 3 -t : -n
