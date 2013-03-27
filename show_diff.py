@@ -6,8 +6,15 @@ dio = DataIO("Settings.json")
 model_names = [
     "ExtraTree_min_sample2_40trees_200f_noNorm_categoryTimeType_log",
     "vowpall",
-    "ExtraTree_min_sample2_10trees_200f_noNorm_categoryTimeType_count_fake_14split_new_log",
-    "ExtraTree_min_sample2_10trees_200f_noNorm_categoryTimeType_count_fake_split_new_log"
+    #"ExtraTree_min_sample2_10trees_200f_noNorm_categoryTimeType_count_fake_14split_new_log",
+    #"ExtraTree_min_sample2_10trees_200f_noNorm_categoryTimeType_count_fake_split_new_log",
+    #"ExtraTree_min_sample2_10trees_200f_noNorm_categoryTimeType_count_rf10_4split_new1_log"
+    #"ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_count_rf10_4split_newOKsalPredictValid_log",
+    "ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_count_exTre20_4split_new_faked_log",
+    #"ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_count_exTre20_4split_newOKsalPredictValid_log",
+    #"ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_count_exTre20_4split_newPredictsalPredictValid_log",
+    "Ridge_tfidf_05d_log"
+    #"ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_count_exTre20_4split_newPredictsalPredictValid1_log",
 ]
 
 valid_salaries = dio.get_salaries("valid", log=False)
@@ -16,13 +23,25 @@ ylim = (0, 8000)
 xlim = (-50000, 50000)
 grid = True
 
+def encode_salaries(salaries, bins):
+    bin_edges = np.linspace(11500.0, 100000, bins + 1, endpoint=True)
+    #hist, bin_edges = np.histogram(salaries, bins)
+    #bin_edges = list(bin_edges)
+    #bin_edges.insert(0, 0)
+    #bin_edges.append(salaries.max() + 1)
+    print np.diff(bin_edges)
+    idxs = np.searchsorted(bin_edges, salaries, side="right")
+    return idxs, bin_edges
+
 
 def my_plot(plot_smt, filename=None, transform_prediction=np.exp, type_n="valid", ylim=None, xlim=None, grid=False, xlabel='Difference between salary and prediction', ylabel='Number of diferences'):
     fig = plt.figure()
     num_models = len(model_names)
     for idx, model_name in enumerate(model_names):
-        prediction_salaries = dio.get_prediction(model_name=model_name, type_n="valid")
+        prediction_salaries = dio.get_prediction(model_name=model_name, type_n=type_n)
+        #print prediction_salaries[1:10]
         prediction_salaries = transform_prediction(prediction_salaries)
+        #print prediction_salaries[1:10]
         diff = prediction_salaries - valid_salaries
         abs_diff = np.abs(diff)
         print model_name
@@ -65,7 +84,8 @@ def plot_hist2d1(axis, diff, abs_diff, cur_pred):
 
 
 def plot(axis, diff, abs_diff, cur_pred):
-    axis.plot(diff)
+    sort_indices = np.argsort(valid_salaries)
+    axis.plot(diff[sort_indices])
 
 
 def plot_sorted(axis, diff, abs_diff, cur_pred):
@@ -80,27 +100,34 @@ def plot_valid_pred_sorted(axis, diff, abs_diff, cur_pred):
     axis.plot(cur_pred[sort_indices], color='r')
     axis.hold(True)
     axis.plot(valid_salaries[sort_indices], color='g')
+    #axis.plot(valid_salaries_enc[sort_indices] * 1000, color='y')
+    #axis.plot(upper_limits[sort_indices], color='b')
 
 
-#my_plot(plot_hist, ylim=ylim, xlim=xlim, grid=True)
-#my_plot(plot_hist2d)
-#my_plot(plot_hist2d1, xlabel="salarie", ylabel="predicted salarie")
-#my_plot(plot, xlabel="salarie", ylabel="predicted salarie")
-#my_plot(plot_sorted, xlabel="Ad", ylabel="diff from valid salarie")
-#my_plot(plot_valid_pred_sorted, xlabel="Ad", ylabel="valid salarie predicted salarie")
+valid_salaries_enc, bin_edges = encode_salaries(valid_salaries, 4)
+#bin_edges = list(bin_edges)
+#bin_edges.insert(0, 0)
+#bin_edges.append(valid_salaries.max() + 1)
+#upper_limits = np.array(map(lambda x: bin_edges[x], valid_salaries_enc))
 
-def encode_salaries(salaries, bins):
-    bin_edges = np.linspace(11500.0, 100000, bins + 1, endpoint=True)
-    #hist, bin_edges = np.histogram(salaries, bins)
-    print np.diff(bin_edges)
-    idxs = np.searchsorted(bin_edges, salaries, side="right")
-    return idxs, bin_edges
+my_plot(plot_hist, ylim=ylim, xlim=xlim, grid=True)
+my_plot(plot_hist2d)
+my_plot(plot_hist2d1, xlabel="salarie", ylabel="predicted salarie")
+my_plot(plot, xlabel="salarie", ylabel="predicted salarie")
+my_plot(plot_sorted, xlabel="Ad", ylabel="diff from valid salarie")
+my_plot(plot_valid_pred_sorted, xlabel="Ad", ylabel="valid salarie predicted salarie")
+
+
+os.exit()
 
 valid_salaries, bin_edges = encode_salaries(valid_salaries, 4)
 model_names = [
-    "sgd_class_tfidf_titleFullLoc_bin4",
-    "multinomialnb_tfidf_titleFullLoc_bin4",
-    "randomForest_tfidf_titleFullLoc_bin4",
+    #"sgd_class_tfidf_titleFullLoc_bin4",
+    #"multinomialnb_tfidf_titleFullLoc_bin4",
+    #"randomForest_tfidf_titleFullLoc_bin4",
+    "multinomialnb_tfidf_titleFullLoc_f1_bin4",
+    "sgd_class_tfidf_titleFullLoc_f1_bin4",
+    "randomForest_tfidf_titleFullLoc_f1_bin4",
     "extraTree_tfidf_titleFullLoc_f1_bin4",
 ]
 my_plot(plot_valid_pred_sorted, transform_prediction=lambda x: x, xlabel="Ad", ylabel="salarie class", type_n="valid_classes")
