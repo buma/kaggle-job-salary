@@ -19,7 +19,7 @@ count_vector_titles = TfidfVectorizer(
 
 if submission:
     type_n = "train_full"
-    type_v = "valid_full"
+    type_v = "test_full"
 else:
     type_n = "train"
     type_v = "valid"
@@ -34,11 +34,11 @@ vectorizer = TfidfVectorizer(
 )
 short_id = "tfidf_200f_l2"
 tfidf_columns = ["Title", "FullDescription", "LocationRaw"]
-#dio.make_counts(vectorizer, short_id, tfidf_columns, type_n, type_v)
+dio.make_counts(vectorizer, short_id, tfidf_columns, type_n, type_v)
 
 
 columns = ["Category", "ContractTime", "ContractType"]
-le_features = dio.get_le_features(columns, "train_full")
+le_features = dio.get_le_features(columns, "train_and_test")
 extra_features = dio.get_features(columns, type_n, le_features)
 extra_valid_features = dio.get_features(columns, type_v, le_features)
 #features = dio.join_features("%s_" + type_n + "_tfidf_matrix_max_f_200",
@@ -76,7 +76,7 @@ for n_trees in [40]:
     predictions = classifier.predict(validation_features)
     if submission:
         dio.save_prediction(name, predictions, type_n=type_v)
-        dio.write_submission(name + ".csv", predictions=predictions)
+        #dio.write_submission(name + ".csv", predictions=predictions)
     else:
         dio.compare_valid_pred(valid_salaries, predictions)
         metric = dio.error_metric

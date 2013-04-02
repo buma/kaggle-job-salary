@@ -1,7 +1,7 @@
 from data_io import DataIO
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.cross_validation import cross_val_score
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
 
 dio = DataIO("Settings_submission.json")
 submission = True
@@ -14,27 +14,23 @@ param = """Normal count vector with max 200. New submission which is repeatable.
 
 if submission:
     type_n = "train_full"
-    type_v = "valid_full"
+    type_v = "test_full"
 else:
     type_n = "train"
     type_v = "valid"
 
 
-vectorizer = TfidfVectorizer(
+vectorizer = CountVectorizer(
     max_features=200,
-    norm='l2',
-    smooth_idf=True,
-    sublinear_tf=False,
-    use_idf=True
 )
 #short_id = "tfidf_200f_l1"
 short_id = "count_200f"
 tfidf_columns = ["Title", "FullDescription", "LocationRaw"]
-#dio.make_counts(vectorizer, short_id, tfidf_columns, type_n, type_v)
+dio.make_counts(vectorizer, short_id, tfidf_columns, type_n, type_v)
 
 
 columns = ["Category", "ContractTime", "ContractType"]
-le_features = dio.get_le_features(columns, "train_full")
+le_features = dio.get_le_features(columns, "train_and_test")
 extra_features = dio.get_features(columns, type_n, le_features)
 extra_valid_features = dio.get_features(columns, type_v, le_features)
 #features = dio.join_features("%s_" + type_n + "_count_vector_matrix_max_f_200",

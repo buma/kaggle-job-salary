@@ -186,6 +186,10 @@ class DataIO(object):
             file_id = "train_data_path"
         elif type_n == "train_and_valid":
             file_id = "train_and_valid"
+        elif type_n == "train_and_test":
+            file_id = "train_and_test"
+        elif type_n == "test_full":
+            file_id = "test_data_path"
         elif type_n == "train_full":
             if "train_full_data_path" in self.paths:
                 file_id = "train_full_data_path"

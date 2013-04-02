@@ -74,7 +74,13 @@ model_names = [model1, model2, model3, model4]
 all_model_predictions = []
 for model_name in model_names:
     model_predictions = load_predictions(model_name)
-    print "%s\nMAE: %f\n" % (model_name, mean_absolute_error(valid_salaries, model_predictions))
+    #print model_predictions[0]
+    if not model_name.endswith("log") and not model_name.startswith("vowpall"):
+        model_predictions = np.log(model_predictions)
+    #if model_name.startswith("vowpall"):
+        #model_predictions = np.log(model_predictions)
+    #print model_predictions[0]
+    print "%s\nMAE: %f\n" % (model_name, mean_absolute_error(valid_salaries, np.exp(model_predictions)))
     all_model_predictions.append(model_predictions)
 predictions = np.vstack(all_model_predictions).T
 predictions = np.exp(predictions)
@@ -86,7 +92,7 @@ indexes = range(0, len(model_names))
 
 def print_index(index):
     names = map(lambda x: model_names[x], index)
-    return ", ".join(names)
+    return "\n ".join(names)
 best_average = (10000,(0))
 best_classifier = best_average
 for num in range(2, len(model_names) + 1):
@@ -131,3 +137,21 @@ print "best classifier:", best_classifier[0], print_index(best_classifier[1])
 #Ridge Linear je isto
 #best average: 5766.06198285 ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_log, vowpall, ExtraTree_min_sample2_40trees_200f_noNorm_categoryTimeType_log
 #best classifier: 5778.35931012 vowpall, ExtraTree_min_sample2_40trees_200f_noNorm_categoryTimeType_log
+
+#best average: 5766.06198285 ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_log, vowpall, ExtraTree_min_sample2_40trees_200f_noNorm_categoryTimeType_log
+#best classifier: 5778.35931012 vowpall, ExtraTree_min_sample2_40trees_200f_noNorm_categoryTimeType_log
+
+#best average: 5694.24220595 ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_log
+ #vowpall
+ #vowpall_loc5
+ #ExtraTree_min_sample2_40trees_200f_noNorm_categoryTimeType
+ #ExtraTree_min_sample2_40trees_200f_noNorm_categoryTimeType_tfidf_log
+ #ExtraTree_min_sample2_40trees_200f_noNorm_categoryTimeType_tfidf1_log
+#best classifier: 5691.47252485 ExtraTree_min_sample2_20trees_200f_noNorm_categoryTimeType_log
+ #vowpall
+ #Random_forest_min_sample2_20trees_200f_noNorm_categoryTimeType_log
+ #Random_forest_min_sample2_40trees_200f_noNorm_categoryTimeType_log
+ #vowpall_loc5
+ #ExtraTree_min_sample2_40trees_200f_noNorm_categoryTimeType
+ #ExtraTree_min_sample2_40trees_200f_noNorm_categoryTimeType_tfidf_log
+ #ExtraTree_min_sample2_40trees_200f_noNorm_categoryTimeType_tfidf1_log
