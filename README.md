@@ -45,7 +45,7 @@ Final model was average of 6 models:
 * Etr with 40 trees with features 2. and 3.
 
 I chose this model because submodels gave best results in cross validation.
-I was **26/285** on public leaderboard. And TBD on private.
+I was **26/285** on public leaderboard. And **23/294** on private. (Top 10%)
 
 ## What I learned
 
